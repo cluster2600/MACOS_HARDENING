@@ -1,7 +1,3 @@
-#!/usr/bin/env python3
-# filename: generate_guidance.py
-# description: Process a given keyword, and output a baseline file
-
 import os
 import yaml
 from arg_parser import create_args
@@ -11,11 +7,12 @@ from utils import parse_authors, append_authors, available_tags
 def main():
     args = create_args()
     try:
-        file_dir = os.path.dirname(os.path.abspath(__file__))
-        parent_dir = os.path.dirname(file_dir)
+        root_dir = '/Users/maximegrenu/Documents/CODE/Mac_sec/'
+        includes_dir = os.path.join(root_dir, 'includes')
+        build_dir = os.path.join(root_dir, 'build', 'baselines')
 
         original_working_directory = os.getcwd()
-        os.chdir(file_dir)
+        os.chdir(root_dir)
 
         all_rules = collect_rules()
 
@@ -24,7 +21,7 @@ def main():
             return
 
         if args.controls:
-            baselines_file = os.path.join(parent_dir, 'includes', '800-53_baselines.yaml')
+            baselines_file = os.path.join(includes_dir, '800-53_baselines.yaml')
             with open(baselines_file) as r:
                 baselines = yaml.load(r, Loader=yaml.SafeLoader)
 
@@ -41,21 +38,20 @@ def main():
 
             return
 
-        build_path = os.path.join(parent_dir, 'build', 'baselines')
-        if not (os.path.isdir(build_path)):
+        if not (os.path.isdir(build_dir)):
             try:
-                os.makedirs(build_path)
+                os.makedirs(build_dir)
             except OSError:
-                print(f"Creation of the directory {build_path} failed")
+                print(f"Creation of the directory {build_dir} failed")
 
     except IOError as msg:
         parser.error(str(msg))
 
-    mscp_data_file = os.path.join(parent_dir, 'includes', 'mscp-data.yaml')
+    mscp_data_file = os.path.join(includes_dir, 'mscp-data.yaml')
     with open(mscp_data_file) as r:
         mscp_data_yaml = yaml.load(r, Loader=yaml.SafeLoader)
 
-    version_file = os.path.join(parent_dir, "VERSION.yaml")
+    version_file = os.path.join(root_dir, "VERSION.yaml")
     with open(version_file) as r:
         version_yaml = yaml.load(r, Loader=yaml.SafeLoader)
 
@@ -64,7 +60,7 @@ def main():
         if args.keyword in rule.rule_tags or args.keyword == "all_rules":
             found_rules.append(rule)
 
-    if args.keyword is None:
+    if not found_rules:
         print("No rules found for the keyword provided, please verify from the following list:")
         available_tags(all_rules)
     else:
@@ -82,10 +78,10 @@ def main():
             authors = append_authors(authors, custom_author_name, custom_author_org)
             baseline_tailored_string = f"{args.keyword.upper()} (Tailored)" if tailored_filename == args.keyword else f"{tailored_filename.upper()} (Tailored from {args.keyword.upper()})"
             odv_baseline_rules = odv_query(found_rules, benchmark)
-            with open(f"{build_path}/{tailored_filename}.yaml", 'w') as baseline_output_file:
+            with open(f"{build_dir}/{tailored_filename}.yaml", 'w') as baseline_output_file:
                 baseline_output_file.write(output_baseline(odv_baseline_rules, version_yaml, baseline_tailored_string, benchmark, authors, full_title))
         else:
-            with open(f"{build_path}/{args.keyword}.yaml", 'w') as baseline_output_file:
+            with open(f"{build_dir}/{args.keyword}.yaml", 'w') as baseline_output_file:
                 baseline_output_file.write(output_baseline(found_rules, version_yaml, baseline_tailored_string, benchmark, authors, full_title))
 
     os.chdir(original_working_directory)
