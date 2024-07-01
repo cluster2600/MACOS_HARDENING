@@ -29,21 +29,22 @@ This script automates the process of enhancing the security and privacy of your 
 
    ```sh
    nano macos_security_setup.sh
-Make the Script Executable
+   
+### Make the Script Executable
 
 Change the permissions of the script to make it executable:
 
 ```sh
 chmod +x macos_security_setup.sh
 
-Run the Script with Root Privileges
+### Run the Script with Root Privileges
 
 Since the script performs tasks that require administrative privileges, you need to run it with sudo:
 
 ```sh
 sudo ./macos_security_setup.sh
 
-Usage
+### Usage
 Step-by-Step Instructions
 Backup Your Data
 
@@ -56,7 +57,7 @@ Open Terminal and navigate to the directory where you saved the script. Execute 
 ```sh
 sudo ./macos_security_setup.sh
 
-Review and Adjust Settings
+## Review and Adjust Settings
 
 After running the script, review the changes made to ensure everything is configured to your liking. Some settings might require manual intervention or additional configuration.
 
