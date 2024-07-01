@@ -532,5 +532,5 @@ For more information on macOS security and privacy, check out the following reso
 
 # Author
 
-This guide was created by Cluster2600 inspired by.
+This guide was created by Cluster2600 inspired by https://github.com/usnistgov/macos_security.
 
