@@ -15,13 +15,13 @@ class MacSecurityRule:
         self.rule_disa_stig = disa_stig
         self.rule_srg = srg
         self.rule_odv = odv
-        self.rule_result_value = result_value
         self.rule_tags = tags
+        self.rule_result_value = result_value
         self.rule_mobileconfig = mobileconfig
         self.rule_mobileconfig_info = mobileconfig_info
 
     def create_asciidoc(self, adoc_rule_template):
-        """Pass an AsciiDoc template as file object to return formatted AsciiDOC"""
+        rule_adoc = ""
         rule_adoc = adoc_rule_template.substitute(
             rule_title=self.rule_title,
             rule_id=self.rule_id,
