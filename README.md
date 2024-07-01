@@ -1,3 +1,5 @@
+# macOS Security and Privacy Guide
+
 This guide is a collection of techniques for improving the security and privacy of [Apple silicon](https://support.apple.com/116943) Mac computers running a [currently supported](https://support.apple.com/HT201222) version of macOS 15 (Sequoia). **Using Macs with Intel CPUs leaves you open to [security vulnerabilities](https://github.com/axi0mX/ipwndfu?tab%253Dreadme-ov-file#checkm8) on the hardware level that Apple can't patch**. Apple silicon Macs are the minimum recommendation, but as a general rule, newer chips are always more secure.
 
 This guide is targeted to power users who wish to adopt enterprise-standard security, but is also suitable for novice users with an interest in improving their privacy and security on a Mac.
@@ -126,11 +128,11 @@ Now is when you decide the best way to counter each threat. You might avoid writ
 
 Here's an example of the type of table you should make for each asset you want to protect:
 
-Adversary | Motivation | Capabilities | Mitigation
--|-|-|-
-Roommate | See private chats or browsing history | Close proximity; can see screen or watch type in password | Use biometrics, use privacy screen, keep phone locked when not using it
-Thief | Unlock phone and steal personal info and drain bank accounts, sell phone for money | Shoulder surf to see password, steal device when not looking while it's logged in | Keep phone in sight or on person at all times, keep locked when not in use, use biometrics to avoid typing passwords
-Sophisticated adversary (state actor) | See private messages to detect dissent | Compromise firmware, potentially install keylogger, listen in with microphone or camera | Use only hardware you can trust, use end-to-end encrypted messaging, use trusted VPN or Tor when communicating
+| Adversary                   | Motivation                                            | Capabilities                                                    | Mitigation                                                                                   |
+|-----------------------------|-------------------------------------------------------|-----------------------------------------------------------------|---------------------------------------------------------------------------------------------|
+| Roommate                    | See private chats or browsing history                 | Close proximity; can see screen or watch type in password       | Use biometrics, use privacy screen, keep phone locked when not using it                     |
+| Thief                       | Unlock phone and steal personal info and drain bank accounts, sell phone for money | Shoulder surf to see password, steal device when not looking while it's logged in | Keep phone in sight or on person at all times, keep locked when not in use, use biometrics to avoid typing passwords |
+| Sophisticated adversary (state actor) | See private messages to detect dissent                | Compromise firmware, potentially install keylogger, listen in with microphone or camera | Use only hardware you can trust, use end-to-end encrypted messaging, use trusted VPN or Tor when communicating |
 
 # Hardware
 
@@ -527,3 +529,8 @@ For more information on macOS security and privacy, check out the following reso
 - [The Practical Guide to Mac Security](https://www.securemac.com/mac-security-guide)
 - [Objective-See](https://objective-see.com/): A collection of free security tools for macOS.
 - [MacRumors Forums](https://forums.macrumors.com/): A community of Mac users discussing security and privacy topics.
+
+# Author
+
+This guide was created by Cluster2600 inspired by.
+
