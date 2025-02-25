@@ -1,0 +1,5 @@
+# requirements.txt for macOS Security Compliance Project
+# Specifies dependencies required to run the project scripts
+
+# PyYAML for YAML file parsing and generation
+pyyaml>=6.0.1
