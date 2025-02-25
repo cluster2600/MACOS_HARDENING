@@ -9,18 +9,23 @@ class BaselineGenerator:
     """Generates security baselines for macOS based on command-line arguments."""
 
     def __init__(self):
-        """Initialize with parsed arguments and directory paths."""
+        """Initialize with parsed arguments and dynamic directory paths."""
         self.args = create_args()
-        self.root_dir = '/Users/maximegrenu/Documents/CODE/Mac_sec/'
+        # Use current directory as default root, override with --root-dir if provided
+        self.root_dir = self.args.root_dir or os.getcwd()
         self.includes_dir = os.path.join(self.root_dir, 'includes')
         self.build_dir = os.path.join(self.root_dir, 'build', 'baselines')
         self.original_wd = os.getcwd()
 
     def setup_directories(self) -> None:
         """Set up working directory and create build directory if needed."""
-        os.chdir(self.root_dir)
-        if not os.path.isdir(self.build_dir):
+        try:
+            os.chdir(self.root_dir)
             os.makedirs(self.build_dir, exist_ok=True)
+        except FileNotFoundError:
+            raise RuntimeError(f"Root directory not found: {self.root_dir}")
+        except PermissionError:
+            raise RuntimeError(f"Permission denied accessing directory: {self.root_dir}")
 
     def load_yaml_file(self, filepath: str) -> dict:
         """Safely load a YAML file with specific error handling."""
