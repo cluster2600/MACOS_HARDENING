@@ -1,8 +1,15 @@
-import os
-import yaml
+from typing import List, Dict, Any, Optional, Type, Iterable
+from string import Template
 
 class MacSecurityRule:
-    def __init__(self, title, rule_id, severity, discussion, check, fix, cci, cce, nist_controls, disa_stig, srg, odv, tags, result_value, mobileconfig, mobileconfig_info):
+    """Represents a macOS security rule with associated attributes."""
+    
+    def __init__(self, title: str, rule_id: str, severity: str, discussion: str, 
+                 check: str, fix: str, cci: List[str], cce: List[str], 
+                 nist_controls: List[str], disa_stig: List[str], srg: List[str], 
+                 odv: Any, tags: List[str], result_value: Any, 
+                 mobileconfig: Any, mobileconfig_info: Any) -> None:
+        """Initialize a security rule."""
         self.rule_title = title
         self.rule_id = rule_id
         self.rule_severity = severity
@@ -20,70 +27,118 @@ class MacSecurityRule:
         self.rule_mobileconfig = mobileconfig
         self.rule_mobileconfig_info = mobileconfig_info
 
-    def create_asciidoc(self, adoc_rule_template):
-        rule_adoc = ""
-        rule_adoc = adoc_rule_template.substitute(
+    def create_asciidoc(self, adoc_rule_template: Template) -> str:
+        """
+        Generate AsciiDoc representation of the rule.
+
+        Args:
+            adoc_rule_template: Template with placeholders for rule attributes
+
+        Returns:
+            Formatted AsciiDoc string
+        """
+        return adoc_rule_template.substitute(
             rule_title=self.rule_title,
             rule_id=self.rule_id,
             rule_severity=self.rule_severity,
             rule_discussion=self.rule_discussion,
             rule_check=self.rule_check,
             rule_fix=self.rule_fix,
-            rule_cci=self.rule_cci,
-            rule_80053r4=self.rule_80053r4,
-            rule_disa_stig=self.rule_disa_stig,
-            rule_srg=self.rule_srg,
-            rule_result=self.rule_result_value
+            rule_cci=self._format_list(self.rule_cci),
+            rule_80053r4=self._format_list(self.rule_80053r4),
+            rule_disa_stig=self._format_list(self.rule_disa_stig),
+            rule_srg=self._format_list(self.rule_srg),
+            rule_result=str(self.rule_result_value)
         )
-        return rule_adoc
 
-def sanitised_input(prompt, type_=None, range_=None, default_=None):
+    @staticmethod
+    def _format_list(items: List[Any]) -> str:
+        """Format a list into a comma-separated string."""
+        return ", ".join(str(item) for item in items) if items else "None"
+
+def sanitised_input(prompt: str, type_: Optional[Type] = None, 
+                   range_: Optional[Iterable] = None, 
+                   default_: Optional[Any] = None) -> Any:
+    """
+    Get validated user input with type and range checking.
+
+    Args:
+        prompt: Text to display to the user
+        type_: Expected type (e.g., str, int)
+        range_: Allowed values or range
+        default_: Value to return if input is empty
+
+    Returns:
+        Validated input of the specified type
+    """
     while True:
-        ui = input(prompt) or default_
-        if type_ is not None:
-            try:
-                ui = type_(ui)
-            except ValueError:
-                print("Input type must be {0}.".format(type_.__name__))
-                continue
-        if type_ is str and ui.isnumeric():
-            print("Input type must be {0}.".format(type_.__name__))
-            continue
+        try:
+            user_input = input(prompt).strip()
+            if not user_input and default_ is not None:
+                return default_
+            if not user_input:
+                raise ValueError("Input required when no default is provided")
 
-        if range_ is not None and ui not in range_:
-            if isinstance(range_, range):
-                print(f"Input must be between {range_.start} and {range_.stop}.")
-            else:
-                expected = " or ".join((
-                    ", ".join(str(x) for x in range_[:-1]),
-                    str(range_[-1])
-                ))
-                print(f"Input must be {expected}.")
-        else:
-            return ui
+            if type_ is not None:
+                user_input = type_(user_input)
 
-def parse_authors(authors_from_yaml):
-    author_block = "*macOS Security Compliance Project*\n\n  "
-    if "preamble" in authors_from_yaml.keys():
-        preamble = authors_from_yaml['preamble']
-        author_block += f'{preamble}\n  '
+            if range_ is not None and user_input not in range_:
+                expected = " or ".join((", ".join(str(x) for x in list(range_)[:-1]), 
+                                      str(list(range_)[-1]))) if not isinstance(range_, range) else f"{range_.start}-{range_.stop-1}"
+                raise ValueError(f"Input must be one of: {expected}")
 
-    author_block += "|===\n  "
-    for name in authors_from_yaml['names']:
-        author_block += f'|{name}\n  '
-    author_block += "|===\n"
-    return author_block
+            return user_input
+        except ValueError as e:
+            print(f"Invalid input: {str(e)}. Please try again.")
 
-def append_authors(authors, name, org):
-    author_block = "*Security configuration tailored by:*\n  |===\n  "
-    author_block += f"|{name}|{org}\n  |===\n  {authors}"
-    return author_block
+def parse_authors(authors_from_yaml: Dict[str, Any]) -> str:
+    """
+    Format author information into a table string.
 
-def available_tags(all_rules):
-    all_tags = [tag for rule in all_rules for tag in rule.rule_tags]
-    unique_tags = sorted(set(all_tags))
-    unique_tags.append("all_rules")
+    Args:
+        authors_from_yaml: Dictionary with author data
 
-    for tag in unique_tags:
-        print(tag)
-    return
+    Returns:
+        Formatted author block
+    """
+    author_block = ["*macOS Security Compliance Project*\n"]
+    
+    if "preamble" in authors_from_yaml:
+        author_block.append(f"  {authors_from_yaml['preamble']}\n")
+    
+    author_block.append("  |===\n")
+    for name in authors_from_yaml.get('names', []):
+        author_block.append(f"  |{name}\n")
+    author_block.append("  |===\n")
+    
+    return "".join(author_block)
+
+def append_authors(authors: str, name: str, org: str) -> str:
+    """
+    Append a custom author to the existing author block.
+
+    Args:
+        authors: Current author block
+        name: New author name
+        org: New author organization
+
+    Returns:
+        Updated author block
+    """
+    return (
+        "*Security configuration tailored by:*\n"
+        "  |===\n"
+        f"  |{name}|{org}\n"
+        "  |===\n"
+        f"  {authors}"
+    )
+
+def available_tags(all_rules: List[MacSecurityRule]) -> None:
+    """
+    Print all unique tags from the rules.
+
+    Args:
+        all_rules: List of security rules
+    """
+    unique_tags = sorted({tag for rule in all_rules for tag in rule.rule_tags} | {"all_rules"})
+    print("\n".join(unique_tags))

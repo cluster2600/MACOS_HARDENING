@@ -1,257 +1,271 @@
-import os.path
+import os
 import glob
 import yaml
+from typing import List, Dict, Any, Optional
 from utils import sanitised_input, MacSecurityRule
 
-def get_rule_yaml(rule_file, custom=False):
-    resulting_yaml = {}
-    names = [os.path.basename(x) for x in glob.glob('../custom/rules/**/*.yaml', recursive=True)]
-    file_name = os.path.basename(rule_file)
+class RuleHandler:
+    """Manages security rule collection, processing, and baseline generation."""
 
-    if custom:
-        print(f"Custom settings found for rule: {rule_file}")
+    BASE_PATH = ".."
+    RULES_DIR = os.path.join(BASE_PATH, "rules")
+    CUSTOM_RULES_DIR = os.path.join(BASE_PATH, "custom/rules")
+
+    @staticmethod
+    def _load_yaml_file(filepath: str) -> Dict[str, Any]:
+        """Load a YAML file with error handling."""
         try:
-            override_path = glob.glob('../custom/rules/**/{}'.format(file_name), recursive=True)[0]
-        except IndexError:
-            override_path = glob.glob('../custom/rules/{}'.format(file_name), recursive=True)[0]
-        with open(override_path) as r:
-            rule_yaml = yaml.load(r, Loader=yaml.SafeLoader)
-    else:
-        with open(rule_file) as r:
-            rule_yaml = yaml.load(r, Loader=yaml.SafeLoader)
+            with open(filepath, 'r') as file:
+                return yaml.load(file, Loader=yaml.SafeLoader) or {}
+        except FileNotFoundError:
+            print(f"File not found: {filepath}")
+            return {}
+        except yaml.YAMLError as e:
+            print(f"Error parsing YAML file {filepath}: {str(e)}")
+            return {}
 
-    try:
-        og_rule_path = glob.glob('../rules/**/{}'.format(file_name), recursive=True)[0]
-    except IndexError:
-        og_rule_path = glob.glob('../custom/rules/**/{}'.format(file_name), recursive=True)[0]
+    @classmethod
+    def get_rule_yaml(cls, rule_file: str, custom: bool = False) -> Dict[str, Any]:
+        """Merge rule YAML from original and custom sources."""
+        resulting_yaml = {}
+        file_name = os.path.basename(rule_file)
 
-    with open(og_rule_path) as og:
-        og_rule_yaml = yaml.load(og, Loader=yaml.SafeLoader)
+        custom_pattern = os.path.join(cls.CUSTOM_RULES_DIR, "**", file_name)
+        rule_pattern = os.path.join(cls.RULES_DIR, "**", file_name)
 
-    for yaml_field in og_rule_yaml:
-        try:
-            resulting_yaml[yaml_field] = rule_yaml[yaml_field] if og_rule_yaml[yaml_field] != rule_yaml[yaml_field] else og_rule_yaml[yaml_field]
-            if 'customized' in resulting_yaml:
-                resulting_yaml['customized'].append("customized {}".format(yaml_field))
+        if custom:
+            print(f"Custom settings found for rule: {file_name}")
+            override_paths = glob.glob(custom_pattern, recursive=True)
+            rule_yaml = cls._load_yaml_file(override_paths[0]) if override_paths else {}
+        else:
+            rule_yaml = cls._load_yaml_file(rule_file)
+
+        og_paths = glob.glob(rule_pattern, recursive=True) or glob.glob(custom_pattern, recursive=True)
+        og_rule_yaml = cls._load_yaml_file(og_paths[0]) if og_paths else {}
+
+        for field in og_rule_yaml:
+            value = rule_yaml.get(field, og_rule_yaml[field])
+            resulting_yaml[field] = value
+            if field in rule_yaml and og_rule_yaml[field] != rule_yaml[field]:
+                resulting_yaml.setdefault('customized', []).append(f"customized {field}")
+
+        return resulting_yaml
+
+    @classmethod
+    def collect_rules(cls) -> List[MacSecurityRule]:
+        """Collect and process all security rules from rules directories."""
+        all_rules = []
+        required_keys = ['mobileconfig', 'macOS', 'severity', 'title', 'check', 'fix', 
+                        'odv', 'tags', 'id', 'references', 'result', 'discussion']
+        reference_types = ['disa_stig', 'cci', 'cce', '800-53r4', 'srg']
+
+        rule_files = sorted(glob.glob(os.path.join(cls.RULES_DIR, "**/*.yaml"), recursive=True) + 
+                          glob.glob(os.path.join(cls.CUSTOM_RULES_DIR, "**/*.yaml"), recursive=True))
+
+        for rule_file in rule_files:
+            rule_yaml = cls.get_rule_yaml(rule_file)
+            
+            for key in required_keys:
+                rule_yaml.setdefault(key, "missing")
+                if key == "references":
+                    rule_yaml[key] = {ref: rule_yaml[key].get(ref, ["None"]) for ref in reference_types}
+
+            all_rules.append(MacSecurityRule(
+                rule_yaml['title'].replace('|', '\|'),
+                rule_yaml['id'].replace('|', '\|'),
+                rule_yaml['severity'].replace('|', '\|'),
+                rule_yaml['discussion'].replace('|', '\|'),
+                rule_yaml['check'].replace('|', '\|'),
+                rule_yaml['fix'].replace('|', '\|'),
+                rule_yaml['references']['cci'],
+                rule_yaml['references']['cce'],
+                rule_yaml['references']['800-53r4'],
+                rule_yaml['references']['disa_stig'],
+                rule_yaml['references']['srg'],
+                rule_yaml['odv'],
+                rule_yaml['tags'],
+                rule_yaml['result'],
+                rule_yaml['mobileconfig'],
+                rule_yaml.get('mobileconfig_info', "missing")
+            ))
+
+        return all_rules
+
+    @staticmethod
+    def get_controls(all_rules: List[MacSecurityRule]) -> List[str]:
+        """Extract unique NIST 800-53 controls from rules."""
+        controls = set()
+        for rule in all_rules:
+            controls.update(rule.rule_80053r4)
+        return sorted(controls)
+
+    @staticmethod
+    def output_baseline(rules: List[MacSecurityRule], version: Dict[str, str], 
+                       baseline_tailored_string: str, benchmark: str, 
+                       authors: str, full_title: str) -> str:
+        """Generate a formatted baseline string."""
+        rule_categories = {
+            "inherent": [], "permanent": [], "n_a": [], "supplemental": [], "other": []
+        }
+        sections = set()
+
+        for rule in rules:
+            rule_id = rule.rule_id
+            if "inherent" in rule.rule_tags:
+                rule_categories["inherent"].append(rule_id)
+            elif "permanent" in rule.rule_tags:
+                rule_categories["permanent"].append(rule_id)
+            elif "n_a" in rule.rule_tags:
+                rule_categories["n_a"].append(rule_id)
+            elif "supplemental" in rule.rule_tags:
+                rule_categories["supplemental"].append(rule_id)
             else:
-                resulting_yaml['customized'] = ["customized {}".format(yaml_field)]
-        except KeyError:
-            resulting_yaml[yaml_field] = og_rule_yaml[yaml_field]
+                rule_categories["other"].append(rule_id)
+                prefix = "_".join(rule_id.split("_")[:2 if rule_id.startswith("system_settings") else 1])
+                sections.add(prefix)
 
-    return resulting_yaml
+        output = []
+        platform_os = f"{version['platform']} {version['os']}"
+        title_suffix = f" {baseline_tailored_string}" if baseline_tailored_string else ""
+        
+        output.append(f'title: "{platform_os}: Security Configuration -{full_title}{title_suffix}"')
+        output.append('description: |')
+        output.append(f'  This guide describes the actions to take when securing a {platform_os} system against the{full_title}{title_suffix} security baseline.')
+        
+        if benchmark == "recommended":
+            output.append("\n  This is a catalog of settings to assist in security benchmark creation, not a mandatory checklist.")
+        
+        output.extend([f'authors: |\n  {authors}', f'parent_values: "{benchmark}"', 'profile:'])
+        
+        for section in sorted(sections):
+            output.extend([
+                f'  - section: "{section}"',
+                '    rules:',
+                *[f'      - {rule}' for rule in sorted(rule_categories["other"]) if rule.startswith(section)]
+            ])
 
-def collect_rules():
-    all_rules = []
-    keys = ['mobileconfig', 'macOS', 'severity', 'title', 'check', 'fix', 'odv', 'tags', 'id', 'references', 'result', 'discussion']
-    references = ['disa_stig', 'cci', 'cce', '800-53r4', 'srg']
+        for category, title in [("inherent", "Inherent"), ("permanent", "Permanent"), 
+                              ("n_a", "not_applicable"), ("supplemental", "Supplemental")]:
+            if rule_categories[category]:
+                output.extend([
+                    f'  - section: "{title}"',
+                    '    rules:',
+                    *[f'      - {rule}' for rule in sorted(rule_categories[category])]
+                ])
 
-    for rule in sorted(glob.glob('../rules/**/*.yaml', recursive=True)) + sorted(glob.glob('../custom/rules/**/*.yaml', recursive=True)):
-        rule_yaml = get_rule_yaml(rule, custom=False)
-        for key in keys:
-            if key not in rule_yaml:
-                rule_yaml[key] = "missing"
-            if key == "references":
-                for reference in references:
-                    if reference not in rule_yaml[key]:
-                        rule_yaml[key][reference] = ["None"]
+        return "\n".join(output)
 
-        all_rules.append(MacSecurityRule(rule_yaml['title'].replace('|', '\|'),
-                                         rule_yaml['id'].replace('|', '\|'),
-                                         rule_yaml['severity'].replace('|', '\|'),
-                                         rule_yaml['discussion'].replace('|', '\|'),
-                                         rule_yaml['check'].replace('|', '\|'),
-                                         rule_yaml['fix'].replace('|', '\|'),
-                                         rule_yaml['references']['cci'],
-                                         rule_yaml['references']['cce'],
-                                         rule_yaml['references']['800-53r4'],
-                                         rule_yaml['references']['disa_stig'],
-                                         rule_yaml['references']['srg'],
-                                         rule_yaml['odv'],
-                                         rule_yaml['tags'],
-                                         rule_yaml['result'],
-                                         rule_yaml['mobileconfig'],
-                                         rule_yaml['mobileconfig_info']))
+    @classmethod
+    def odv_query(cls, rules: List[MacSecurityRule], benchmark: str) -> List[MacSecurityRule]:
+        """Interactively query user for rule inclusion and ODV values."""
+        print("Rule inclusion is a risk-based decision (RBD). Each rule maps to an 800-53 control.")
+        if benchmark != "recommended":
+            print("WARNING: Modifying an established benchmark may affect compliance.")
 
-    return all_rules
+        included_rules = []
+        queried_ids = set()
+        include_all = False
 
-def get_controls(all_rules):
-    all_controls = []
-    for rule in all_rules:
-        for control in rule.rule_80053r4:
-            if control not in all_controls:
-                all_controls.append(control)
+        for rule in rules:
+            if rule.rule_id in queried_ids:
+                continue
 
-    all_controls.sort()
-    return all_controls
-
-def output_baseline(rules, version, baseline_tailored_string, benchmark, authors, full_title):
-    inherent_rules = []
-    permanent_rules = []
-    na_rules = []
-    supplemental_rules = []
-    other_rules = []
-    sections = []
-    output_text = ""
-
-    for rule in rules:
-        if "inherent" in rule.rule_tags:
-            inherent_rules.append(rule.rule_id)
-        elif "permanent" in rule.rule_tags:
-            permanent_rules.append(rule.rule_id)
-        elif "n_a" in rule.rule_tags:
-            na_rules.append(rule.rule_id)
-        elif "supplemental" in rule.rule_tags:
-            supplemental_rules.append(rule.rule_id)
-        else:
-            if rule.rule_id not in other_rules:
-                other_rules.append(rule.rule_id)
-            section_name = rule.rule_id.split("_")[0]+"_"+rule.rule_id.split("_")[1] if rule.rule_id.startswith("system_settings") else rule.rule_id.split("_")[0]
-            if section_name not in sections:
-                sections.append(section_name)
-
-    if baseline_tailored_string:
-        output_text = f'title: "{version["platform"]} {version["os"]}: Security Configuration -{full_title} {baseline_tailored_string}"\n'
-        output_text += f'description: |\n  This guide describes the actions to take when securing a {version["platform"]} {version["os"]} system against the{full_title} {baseline_tailored_string} security baseline.\n'
-    else:
-        output_text = f'title: "{version["platform"]} {version["os"]}: Security Configuration -{full_title}"\n'
-        output_text += f'description: |\n  This guide describes the actions to take when securing a {version["platform"]} {version["os"]} system against the{full_title} security baseline.\n'
-
-    if benchmark == "recommended":
-        output_text += "\n  Information System Security Officers and benchmark creators can use this catalog of settings in order to assist them in security benchmark creation. This list is a catalog, not a checklist or benchmark, and satisfaction of every item is not likely to be possible or sensible in many operational scenarios.\n"
-
-    output_text += f'authors: |\n  {authors}'
-    output_text += f'parent_values: "{benchmark}"\n'
-    output_text += 'profile:\n'
-
-    other_rules.sort()
-    inherent_rules.sort()
-    permanent_rules.sort()
-    na_rules.sort()
-    supplemental_rules.sort()
-
-    if other_rules:
-        for section in sections:
-            output_text += ('  - section: "{}"\n'.format(section_title(section, version["cpe"])))
-            output_text += ("    rules:\n")
-            for rule in other_rules:
-                if rule.startswith(section):
-                    output_text += ("      - {}\n".format(rule))
-
-    if inherent_rules:
-        output_text += ('  - section: "Inherent"\n')
-        output_text += ("    rules:\n")
-        for rule in inherent_rules:
-            output_text += ("      - {}\n".format(rule))
-
-    if permanent_rules:
-        output_text += ('  - section: "Permanent"\n')
-        output_text += ("    rules:\n")
-        for rule in permanent_rules:
-            output_text += ("      - {}\n".format(rule))
-
-    if na_rules:
-        output_text += ('  - section: "not_applicable"\n')
-        output_text += ("    rules: \n")
-        for rule in na_rules:
-            output_text += ("      - {}\n".format(rule))
-
-    if supplemental_rules:
-        output_text += ('  - section: "Supplemental"\n')
-        output_text += ("    rules:\n")
-        for rule in supplemental_rules:
-            output_text += ("      - {}\n".format(rule))
-
-    return output_text
-
-def odv_query(rules, benchmark):
-    print("The inclusion of any given rule is a risk-based-decision (RBD).  While each rule is mapped to an 800-53 control, deploying it in your organization should be part of the decision-making process. \nYou will be prompted to include each rule, and for those with specific organizational defined values (ODV), you will be prompted for those as well.\n")
-
-    if benchmark != "recommended":
-        print(f"WARNING: You are attempting to tailor an already established benchmark.  Excluding rules or modifying ODVs may not meet the compliance of the established benchmark.\n")
-
-    included_rules = []
-    queried_rule_ids = []
-
-    include_all = False
-
-    for rule in rules:
-        get_odv = False
-
-        _always_include = ['inherent']
-        if any(tag in rule.rule_tags for tag in _always_include):
-            include = "Y"
-        elif include_all:
-            if rule.rule_id not in queried_rule_ids:
-                include = "Y"
-                get_odv = True
-                queried_rule_ids.append(rule.rule_id)
-                remove_odv_custom_rule(rule)
-        else:
-            if rule.rule_id not in queried_rule_ids:
-                include = sanitised_input(f"Would you like to include the rule for \"{rule.rule_id}\" in your benchmark? [Y/n/all/?]: ", str.lower, range_=('y', 'n', 'all', '?'), default_="y")
+            if "inherent" in rule.rule_tags:
+                include = "y"
+            elif include_all:
+                include = "y"
+                cls._handle_odv(rule, benchmark, included_rules)
+            else:
+                include = sanitised_input(
+                    f"Include rule \"{rule.rule_id}\" in your benchmark? [Y/n/all/?]: ",
+                    str.lower, range_=('y', 'n', 'all', '?'), default_="y"
+                )
                 if include == "?":
                     print(f'Rule Details: \n{rule.rule_discussion}')
-                    include = sanitised_input(f"Would you like to include the rule for \"{rule.rule_id}\" in your benchmark? [Y/n/all]: ", str.lower, range_=('y', 'n', 'all'), default_="y")
-                queried_rule_ids.append(rule.rule_id)
-                get_odv = True
-                remove_odv_custom_rule(rule)
-                if include.upper() == "ALL":
+                    include = sanitised_input(
+                        f"Include rule \"{rule.rule_id}\" in your benchmark? [Y/n/all]: ",
+                        str.lower, range_=('y', 'n', 'all'), default_="y"
+                    )
+                if include == "all":
                     include_all = True
                     include = "y"
-        if include.upper() == "Y":
-            included_rules.append(rule)
-            if rule.rule_odv == "missing":
-                continue
-            elif get_odv:
-                if benchmark == "recommended":
-                    print(f'{rule.rule_odv["hint"]}')
-                    if isinstance(rule.rule_odv["recommended"], int):
-                         odv = sanitised_input(f'Enter the ODV for \"{rule.rule_id}\" or press Enter for the recommended value ({rule.rule_odv["recommended"]}): ', int, default_=rule.rule_odv["recommended"])
-                    elif isinstance(rule.rule_odv["recommended"], bool):
-                         odv = sanitised_input(f'Enter the ODV for \"{rule.rule_id}\" or press Enter for the recommended value ({rule.rule_odv["recommended"]}): ', bool, default_=rule.rule_odv["recommended"])
-                    else:
-                         odv = sanitised_input(f'Enter the ODV for \"{rule.rule_id}\" or press Enter for the recommended value ({rule.rule_odv["recommended"]}): ', str, default_=rule.rule_odv["recommended"])
-                    if odv and odv != rule.rule_odv["recommended"]:
-                        write_odv_custom_rule(rule, odv)
-                else:
-                    print(f'\nODV value: {rule.rule_odv["hint"]}')
-                    if isinstance(rule.rule_odv[benchmark], int):
-                         odv = sanitised_input(f'Enter the ODV for \"{rule.rule_id}\" or press Enter for the default value ({rule.rule_odv[benchmark]}): ', int, default_=rule.rule_odv[benchmark])
-                    elif isinstance(rule.rule_odv[benchmark], bool):
-                         odv = sanitised_input(f'Enter the ODV for \"{rule.rule_id}\" or press Enter for the default value ({rule.rule_odv[benchmark]}): ', bool, default_=rule.rule_odv[benchmark])
-                    else:
-                         odv = sanitised_input(f'Enter the ODV for \"{rule.rule_id}\" or press Enter for the default value ({rule.rule_odv[benchmark]}): ', str, default_=rule.rule_odv[benchmark])
-                    if odv and odv != rule.rule_odv[benchmark]:
-                        write_odv_custom_rule(rule, odv)
-    return included_rules
+                cls._handle_odv(rule, benchmark, included_rules if include == "y" else None)
 
-def write_odv_custom_rule(rule, odv):
-    print(f"Writing custom rule for {rule.rule_id} to include value {odv}")
+            if include == "y":
+                included_rules.append(rule)
+            queried_ids.add(rule.rule_id)
 
-    if not os.path.exists("../custom/rules"):
-        os.makedirs("../custom/rules")
-    if os.path.exists(f"../custom/rules/{rule.rule_id}.yaml"):
-        with open(f"../custom/rules/{rule.rule_id}.yaml") as f:
-            rule_yaml = yaml.load(f, Loader=yaml.SafeLoader)
-    else:
-        rule_yaml = {}
+        return included_rules
 
-    rule_yaml['odv'] = {"custom" : odv}
-    with open(f"../custom/rules/{rule.rule_id}.yaml", 'w') as f:
-        yaml.dump(rule_yaml, f, explicit_start=True)
+    @classmethod
+    def _handle_odv(cls, rule: MacSecurityRule, benchmark: str, included_rules: Optional[List] = None) -> None:
+        """Process ODV for a rule if included."""
+        if rule.rule_odv == "missing" or not included_rules:
+            return
 
-def remove_odv_custom_rule(rule):
-    odv_yaml = {}
-    try:
-        with open(f"../custom/rules/{rule.rule_id}.yaml") as f:
-            odv_yaml = yaml.load(f, Loader=yaml.SafeLoader)
-            odv_yaml.pop('odv', None)
-    except:
-        pass
+        odv_key = "recommended" if benchmark == "recommended" else benchmark
+        recommended = rule.rule_odv.get(odv_key)
+        if recommended is None:
+            return
 
-    if odv_yaml:
-        with open(f"../custom/rules/{rule.rule_id}.yaml", 'w') as f:
-            yaml.dump(odv_yaml, f, explicit_start=True)
-    else:
-        if os.path.exists(f"../custom/rules/{rule.rule_id}.yaml"):
-            os.remove(f"../custom/rules/{rule.rule_id}.yaml")
+        print(f'\n{rule.rule_odv.get("hint", "No hint available")}')
+        odv_type = type(recommended)
+        odv = sanitised_input(
+            f'Enter ODV for "{rule.rule_id}" (default: {recommended}): ',
+            odv_type, default_=recommended
+        )
+        
+        if odv != recommended:
+            cls._write_odv_custom_rule(rule, odv)
+        else:
+            cls._remove_odv_custom_rule(rule)
+
+    @classmethod
+    def _write_odv_custom_rule(cls, rule: MacSecurityRule, odv: Any) -> None:
+        """Write custom ODV to a file."""
+        os.makedirs(cls.CUSTOM_RULES_DIR, exist_ok=True)
+        filepath = os.path.join(cls.CUSTOM_RULES_DIR, f"{rule.rule_id}.yaml")
+        
+        rule_yaml = cls._load_yaml_file(filepath)
+        rule_yaml['odv'] = {"custom": odv}
+        
+        try:
+            with open(filepath, 'w') as f:
+                yaml.dump(rule_yaml, f, explicit_start=True)
+            print(f"Created custom rule {rule.rule_id} with value {odv}")
+        except IOError as e:
+            print(f"Error writing custom rule {filepath}: {str(e)}")
+
+    @classmethod
+    def _remove_odv_custom_rule(cls, rule: MacSecurityRule) -> None:
+        """Remove custom ODV file if it exists and is empty."""
+        filepath = os.path.join(cls.CUSTOM_RULES_DIR, f"{rule.rule_id}.yaml")
+        if not os.path.exists(filepath):
+            return
+
+        rule_yaml = cls._load_yaml_file(filepath)
+        rule_yaml.pop('odv', None)
+        
+        if rule_yaml:
+            with open(filepath, 'w') as f:
+                yaml.dump(rule_yaml, f, explicit_start=True)
+        else:
+            os.remove(filepath)
+
+# Legacy function compatibility
+def get_rule_yaml(rule_file: str, custom: bool = False) -> Dict[str, Any]:
+    return RuleHandler.get_rule_yaml(rule_file, custom)
+
+def collect_rules() -> List[MacSecurityRule]:
+    return RuleHandler.collect_rules()
+
+def get_controls(all_rules: List[MacSecurityRule]) -> List[str]:
+    return RuleHandler.get_controls(all_rules)
+
+def output_baseline(rules: List[MacSecurityRule], version: Dict[str, str], 
+                   baseline_tailored_string: str, benchmark: str, 
+                   authors: str, full_title: str) -> str:
+    return RuleHandler.output_baseline(rules, version, baseline_tailored_string, benchmark, authors, full_title)
+
+def odv_query(rules: List[MacSecurityRule], benchmark: str) -> List[MacSecurityRule]:
+    return RuleHandler.odv_query(rules, benchmark)
