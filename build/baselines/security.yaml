@@ -1,0 +1,13 @@
+title: "macOS 15 (Sequoia): Security Configuration - security"
+description: |
+  This guide describes the actions to take when securing a macOS 15 (Sequoia) system against the security security baseline.
+authors: |
+  *macOS Security Compliance Project*
+  |===
+  |===
+
+parent_values: "security"
+profile:
+  - section: "guest"
+    rules:
+      - guest_account_disable

@@ -1,0 +1,19 @@
+title: "macOS 15 (Sequoia): Security Configuration - macOS STIG Baseline MAX (Tailored from STIG)"
+description: |
+  This guide describes the actions to take when securing a macOS 15 (Sequoia) system against the macOS STIG Baseline MAX (Tailored from STIG) security baseline.
+authors: |
+  *Security configuration tailored by:*
+  |===
+  |maxime|cyberdyne
+  |===
+  *macOS Security Compliance Project*
+  STIG Compliance Team
+  |===
+  |Security Team
+  |===
+
+parent_values: "stig"
+profile:
+  - section: "guest"
+    rules:
+      - guest_account_disable

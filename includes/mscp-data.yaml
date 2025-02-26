@@ -1,12 +1,12 @@
 authors:
   stig:
     names:
-      - "Security Team"
-    preamble: "STIG Compliance Team"
-  recommended:
+      - "NIST macOS Security Team"
+    preamble: "Developed by the National Institute of Standards and Technology"
+  security:
     names:
-      - "General Security Team"
-    preamble: "Recommended Practices Group"
+      - "NIST Security Team"
+    preamble: "General Security Configuration Team"
 titles:
-  stig: "macOS STIG Baseline"
-  recommended: "Recommended macOS Security Settings"
+  stig: "macOS STIG Baseline Revision 1.1 for Sequoia"
+  security: "macOS General Security Baseline Revision 1.1 for Sequoia"

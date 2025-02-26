@@ -1,7 +1,21 @@
 low:
   - AC-2
   - AC-3
+  - AC-18
+  - CM-5
+  - SI-7
 moderate:
   - AC-2
   - AC-3
+  - AC-18
+  - CM-5
+  - SI-7
   - IA-5
+high:
+  - AC-2
+  - AC-3
+  - AC-18
+  - CM-5
+  - SI-7
+  - IA-5
+  - SC-13
