@@ -9,7 +9,7 @@ from rule_handler import collect_rules, get_controls, output_baseline, odv_query
 from utils import parse_authors, append_authors, available_tags, sanitised_input
 
 class BaselineGenerator:
-    """Generates security baselines, applies fixes, and provides a GUI for macOS based on command-line arguments."""
+    """Generates security baselines, applies fixes, and provides interfaces for macOS tuning."""
 
     def __init__(self):
         """Initialize with parsed arguments and dynamic directory paths."""
@@ -49,9 +49,13 @@ class BaselineGenerator:
         included_controls = get_controls(rules)
         needed_controls = list(dict.fromkeys(baselines['low']))  # Remove duplicates
         
-        for control in needed_controls:
-            if control not in included_controls:
-                print(f'{control} missing from any rule, needs a rule or supplemental inclusion')
+        missing = [control for control in needed_controls if control not in included_controls]
+        if missing:
+            print("Missing controls:")
+            for control in missing:
+                print(f"  - {control}")
+        else:
+            print("All required controls are covered.")
 
     def get_matching_rules(self, all_rules: List, keyword: str) -> List:
         """Filter rules based on the provided keyword."""
@@ -74,12 +78,11 @@ class BaselineGenerator:
                 print(f"Skipping fix for '{rule.rule_id}'")
                 continue
 
-            # Check if sudo is required (most macOS fixes need it)
             if 'sudo' in fix_cmd.lower() or any(cmd in fix_cmd for cmd in ['/usr/bin/pwpolicy', '/usr/sbin/spctl', '/usr/bin/defaults']):
                 if os.geteuid() != 0:
                     print(f"Error: Fix for '{rule.rule_id}' requires root privileges. Please run with sudo.")
                     continue
-                cmd = fix_cmd  # Already includes sudo if specified
+                cmd = fix_cmd
             else:
                 cmd = fix_cmd
 
@@ -168,7 +171,7 @@ class BaselineGenerator:
                 rules = self.get_matching_rules(all_rules, tag)
                 if rules:
                     self._generate_standard_baseline(rules, tag, parse_authors(mscp_data['authors'].get(tag, {})), 
-                                                     f"{mscp_data['titles'].get(tag, tag)}", version_data, tag)
+                                                    f"{mscp_data['titles'].get(tag, tag)}", version_data, tag)
                 else:
                     print(f"No rules found for tag '{tag}'. Available tags:")
                     self.list_available_tags(all_rules)
@@ -178,7 +181,7 @@ class BaselineGenerator:
                 if rules:
                     self.args.tailor = True
                     self._generate_tailored_baseline(rules, tag, parse_authors(mscp_data['authors'].get(tag, {})), 
-                                                     f"{mscp_data['titles'].get(tag, tag)}", version_data, tag)
+                                                    f"{mscp_data['titles'].get(tag, tag)}", version_data, tag)
                     self.args.tailor = False
                 else:
                     print(f"No rules found for tag '{tag}'. Available tags:")
@@ -195,95 +198,105 @@ class BaselineGenerator:
                 print(f"Unknown command: '{command}'. Type 'help' for available commands.")
 
     def gui_mode(self, all_rules: List, mscp_data: dict, version_data: dict) -> None:
-        """Run a graphical user interface using Tkinter."""
+        """Run a graphical user interface with radio buttons."""
         root = tk.Tk()
         root.title("macOS Security Compliance Tool")
+        root.geometry("400x400")
 
-        # List Tags Button
-        def list_tags():
-            tags = "\n".join(sorted({tag for rule in all_rules for tag in rule.rule_tags} | {"all_rules"}))
-            messagebox.showinfo("Available Tags", tags)
+        tk.Label(root, text="Select an action:", font=("Arial", 12)).pack(pady=10)
+        selected_option = tk.StringVar()
 
-        tk.Button(root, text="List Tags", command=list_tags).pack(pady=5)
+        options = [
+            ("List Tags", "list"),
+            ("Generate Baseline", "generate"),
+            ("Check Controls", "check"),
+            ("Tailor Baseline", "tailor"),
+            ("Apply Fixes", "apply")
+        ]
 
-        # Generate Baseline Button
-        def generate_baseline():
-            tag = simpledialog.askstring("Generate Baseline", "Enter tag (e.g., 'stig'): ")
-            if tag:
-                rules = self.get_matching_rules(all_rules, tag)
-                if rules:
-                    filepath = os.path.join(self.build_dir, f"{tag}.yaml")
-                    with open(filepath, 'w') as f:
-                        f.write(output_baseline(rules, version_data, "", tag, parse_authors(mscp_data['authors'].get(tag, {})), f"{mscp_data['titles'].get(tag, tag)}"))
-                    messagebox.showinfo("Success", f"Baseline written to {filepath}")
+        for text, value in options:
+            tk.Radiobutton(root, text=text, variable=selected_option, value=value, anchor='w', padx=20).pack(fill='x')
+
+        tk.Label(root, text="Note: Applying fixes may require sudo.", font=("Arial", 10, "italic")).pack(pady=10)
+
+        def proceed():
+            option = selected_option.get()
+            if not option:
+                messagebox.showerror("Error", "Please select an option.")
+                return
+
+            if option == "list":
+                tags = "\n".join(sorted({tag for rule in all_rules for tag in rule.rule_tags} | {"all_rules"}))
+                messagebox.showinfo("Available Tags", tags)
+
+            elif option == "generate":
+                tag = simpledialog.askstring("Generate Baseline", "Enter tag (e.g., 'stig'):")
+                if tag:
+                    rules = self.get_matching_rules(all_rules, tag)
+                    if rules:
+                        filepath = os.path.join(self.build_dir, f"{tag}.yaml")
+                        with open(filepath, 'w') as f:
+                            f.write(output_baseline(
+                                rules, version_data, "", tag,
+                                parse_authors(mscp_data['authors'].get(tag, {})),
+                                mscp_data['titles'].get(tag, tag)
+                            ))
+                        messagebox.showinfo("Success", f"Baseline written to {filepath}")
+                    else:
+                        messagebox.showerror("Error", f"No rules found for tag '{tag}'")
+
+            elif option == "check":
+                baselines = self.load_yaml_file(os.path.join(self.includes_dir, '800-53_baselines.yaml'))
+                included = get_controls(all_rules)
+                needed = list(dict.fromkeys(baselines['low']))
+                missing = [ctrl for ctrl in needed if ctrl not in included]
+                if missing:
+                    messagebox.showwarning("Missing Controls", "\n".join(missing))
                 else:
-                    messagebox.showerror("Error", f"No rules found for tag '{tag}'")
+                    messagebox.showinfo("Controls", "All required controls covered.")
 
-        tk.Button(root, text="Generate Baseline", command=generate_baseline).pack(pady=5)
+            elif option == "tailor":
+                tag = simpledialog.askstring("Tailor Baseline", "Enter tag (e.g., 'stig'):")
+                if tag:
+                    rules = self.get_matching_rules(all_rules, tag)
+                    if rules:
+                        filename = simpledialog.askstring("Tailor Baseline", "Enter tailored benchmark name:", initialvalue=tag) or tag
+                        name = simpledialog.askstring("Tailor Baseline", "Enter your name:")
+                        org = simpledialog.askstring("Tailor Baseline", "Enter your organization:")
+                        authors = append_authors(parse_authors(mscp_data['authors'].get(tag, {})), name, org)
+                        tailored_rules = []
+                        for rule in rules:
+                            if messagebox.askyesno("Include Rule", f"Include '{rule.rule_id}'?\n{rule.rule_discussion}"):
+                                tailored_rules.append(rule)
+                        filepath = os.path.join(self.build_dir, f"{filename}.yaml")
+                        with open(filepath, 'w') as f:
+                            f.write(output_baseline(
+                                tailored_rules, version_data, f"{filename.upper()} (from {tag.upper()})",
+                                tag, authors, mscp_data['titles'].get(tag, tag)
+                            ))
+                        messagebox.showinfo("Success", f"Tailored baseline written to {filepath}")
+                    else:
+                        messagebox.showerror("Error", f"No rules found for tag '{tag}'")
 
-        # Check Controls Button
-        def check_controls():
-            baselines = self.load_yaml_file(os.path.join(self.includes_dir, '800-53_baselines.yaml'))
-            included_controls = get_controls(all_rules)
-            needed_controls = list(dict.fromkeys(baselines['low']))
-            missing = [control for control in needed_controls if control not in included_controls]
-            if missing:
-                messagebox.showwarning("Missing Controls", "\n".join(missing))
-            else:
-                messagebox.showinfo("Controls", "All required controls are covered")
+            elif option == "apply":
+                tag = simpledialog.askstring("Apply Fixes", "Enter tag (e.g., 'stig'):")
+                if tag:
+                    rules = self.get_matching_rules(all_rules, tag)
+                    if rules:
+                        for rule in rules:
+                            fix = rule.rule_fix.strip()
+                            if fix and fix != "missing":
+                                if messagebox.askyesno("Apply Fix", f"Run fix for '{rule.rule_id}'?\n{fix}"):
+                                    try:
+                                        result = subprocess.run(fix, shell=True, check=True, capture_output=True, text=True)
+                                        messagebox.showinfo("Success", f"Applied fix: {result.stdout}")
+                                    except subprocess.CalledProcessError as e:
+                                        messagebox.showerror("Error", f"Fix failed: {e.stderr}")
+                    else:
+                        messagebox.showerror("Error", f"No rules found for tag '{tag}'")
 
-        tk.Button(root, text="Check Controls", command=check_controls).pack(pady=5)
-
-        # Tailor Baseline Button
-        def tailor_baseline():
-            tag = simpledialog.askstring("Tailor Baseline", "Enter tag (e.g., 'stig'): ")
-            if tag:
-                rules = self.get_matching_rules(all_rules, tag)
-                if rules:
-                    tailored_filename = simpledialog.askstring("Tailor Baseline", "Enter a name for your tailored benchmark or press Enter for default: ", initialvalue=tag)
-                    custom_author_name = simpledialog.askstring("Tailor Baseline", "Enter your name: ")
-                    custom_author_org = simpledialog.askstring("Tailor Baseline", "Enter your organization: ")
-                    if not tailored_filename:
-                        tailored_filename = tag
-                    authors = append_authors(parse_authors(mscp_data['authors'].get(tag, {})), custom_author_name, custom_author_org)
-                    baseline_string = f"{tailored_filename.upper()} (Tailored from {tag.upper()})"
-                    tailored_rules = []
-                    for rule in rules:
-                        include = messagebox.askyesno("Include Rule", f"Include rule '{rule.rule_id}'?\nDescription: {rule.rule_discussion}")
-                        if include:
-                            tailored_rules.append(rule)
-                    filepath = os.path.join(self.build_dir, f"{tailored_filename}.yaml")
-                    with open(filepath, 'w') as f:
-                        f.write(output_baseline(tailored_rules, version_data, baseline_string, tag, authors, f"{mscp_data['titles'].get(tag, tag)}"))
-                    messagebox.showinfo("Success", f"Tailored baseline written to {filepath}")
-                else:
-                    messagebox.showerror("Error", f"No rules found for tag '{tag}'")
-
-        tk.Button(root, text="Tailor Baseline", command=tailor_baseline).pack(pady=5)
-
-        # Apply Fixes Button
-        def apply_fixes():
-            tag = simpledialog.askstring("Apply Fixes", "Enter tag (e.g., 'stig'): ")
-            if tag:
-                rules = self.get_matching_rules(all_rules, tag)
-                if rules:
-                    for rule in rules:
-                        fix_cmd = rule.rule_fix.strip()
-                        if not fix_cmd or fix_cmd == "missing":
-                            continue
-                        if messagebox.askyesno("Apply Fix", f"Apply fix for '{rule.rule_id}'?\nCommand: {fix_cmd}"):
-                            try:
-                                result = subprocess.run(fix_cmd, shell=True, check=True, capture_output=True, text=True)
-                                messagebox.showinfo("Success", f"Applied fix for '{rule.rule_id}': {result.stdout}")
-                            except subprocess.CalledProcessError as e:
-                                messagebox.showerror("Error", f"Failed to apply fix for '{rule.rule_id}': {e.stderr}")
-                            except Exception as e:
-                                messagebox.showerror("Error", f"Unexpected error: {str(e)}")
-                else:
-                    messagebox.showerror("Error", f"No rules found for tag '{tag}'")
-
-        tk.Button(root, text="Apply Fixes", command=apply_fixes).pack(pady=5)
-
+        tk.Button(root, text="Proceed", command=proceed, width=10).pack(pady=10)
+        tk.Button(root, text="Quit", command=root.quit, width=10).pack(pady=10)
         root.mainloop()
 
     def run(self) -> None:
