@@ -253,9 +253,6 @@ class RuleHandler:
             os.remove(filepath)
 
 # Legacy function compatibility
-def get_rule_yaml(rule_file: str, custom: bool = False) -> Dict[str, Any]:
-    return RuleHandler.get_rule_yaml(rule_file, custom)
-
 def collect_rules() -> List[MacSecurityRule]:
     return RuleHandler.collect_rules()
 

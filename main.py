@@ -47,7 +47,7 @@ class BaselineGenerator:
         """Check for missing NIST 800-53 controls in rules."""
         baselines = self.load_yaml_file(os.path.join(self.includes_dir, '800-53_baselines.yaml'))
         included_controls = get_controls(rules)
-        needed_controls = list(dict.fromkeys(baselines['low']))  # Remove duplicates
+        needed_controls = list(dict.fromkeys(baselines['low']))
         
         missing = [control for control in needed_controls if control not in included_controls]
         if missing:

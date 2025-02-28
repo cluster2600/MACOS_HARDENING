@@ -28,15 +28,7 @@ class MacSecurityRule:
         self.rule_mobileconfig_info = mobileconfig_info
 
     def create_asciidoc(self, adoc_rule_template: Template) -> str:
-        """
-        Generate AsciiDoc representation of the rule.
-
-        Args:
-            adoc_rule_template: Template with placeholders for rule attributes
-
-        Returns:
-            Formatted AsciiDoc string
-        """
+        """Generate AsciiDoc representation of the rule."""
         return adoc_rule_template.substitute(
             rule_title=self.rule_title,
             rule_id=self.rule_id,
@@ -59,18 +51,7 @@ class MacSecurityRule:
 def sanitised_input(prompt: str, type_: Optional[Type] = None, 
                    range_: Optional[Iterable] = None, 
                    default_: Optional[Any] = None) -> Any:
-    """
-    Get validated user input with type and range checking.
-
-    Args:
-        prompt: Text to display to the user
-        type_: Expected type (e.g., str, int)
-        range_: Allowed values or range
-        default_: Value to return if input is empty
-
-    Returns:
-        Validated input of the specified type
-    """
+    """Get validated user input with type and range checking."""
     while True:
         try:
             user_input = input(prompt).strip()
@@ -92,15 +73,7 @@ def sanitised_input(prompt: str, type_: Optional[Type] = None,
             print(f"Invalid input: {str(e)}. Please try again.")
 
 def parse_authors(authors_from_yaml: Dict[str, Any]) -> str:
-    """
-    Format author information into a table string.
-
-    Args:
-        authors_from_yaml: Dictionary with author data
-
-    Returns:
-        Formatted author block
-    """
+    """Format author information into a table string."""
     author_block = ["*macOS Security Compliance Project*\n"]
     
     if "preamble" in authors_from_yaml:
@@ -114,17 +87,7 @@ def parse_authors(authors_from_yaml: Dict[str, Any]) -> str:
     return "".join(author_block)
 
 def append_authors(authors: str, name: str, org: str) -> str:
-    """
-    Append a custom author to the existing author block.
-
-    Args:
-        authors: Current author block
-        name: New author name
-        org: New author organization
-
-    Returns:
-        Updated author block
-    """
+    """Append a custom author to the existing author block."""
     return (
         "*Security configuration tailored by:*\n"
         "  |===\n"
@@ -134,11 +97,6 @@ def append_authors(authors: str, name: str, org: str) -> str:
     )
 
 def available_tags(all_rules: List[MacSecurityRule]) -> None:
-    """
-    Print all unique tags from the rules.
-
-    Args:
-        all_rules: List of security rules
-    """
+    """Print all unique tags from the rules."""
     unique_tags = sorted({tag for rule in all_rules for tag in rule.rule_tags} | {"all_rules"})
     print("\n".join(unique_tags))
