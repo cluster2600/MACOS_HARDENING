@@ -197,5 +197,5 @@ Open-source under the MIT License.
 
 ## Acknowledgments  
 - Built on **NIST macOS Security Guidelines (Revision 1.1, 2024)**.  
-- Inspired by the **macOS Security and Privacy Guide**.  
+- Inspired by the **macOS Security and Privacy Guide** and Derrick https://github.com/supdevinci/derrick/tree/main.  
 - Developed by **Maxime at Cyberdyne Systems**.  
