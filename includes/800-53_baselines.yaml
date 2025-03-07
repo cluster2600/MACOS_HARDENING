@@ -1,39 +1,7 @@
 low:
-  - AC-2    # Account Management (Root, Guest, Auto-Login)
-  - AC-3    # Access Enforcement (Lockdown Mode)
-  - AC-11   # Session Lock (Wake, Screensaver)
-  - AC-17   # Remote Access (SSH, Remote Management)
-  - AC-18   # Wireless Access (Bluetooth, Wi-Fi)
-  - CM-5    # Access Restrictions for Change (Gatekeeper)
-  - SC-7    # Boundary Protection (Firewall)
-  - SC-28   # Protection of Information at Rest (FileVault)
-  - SI-2    # Flaw Remediation (Software Updates)
-  - SI-4    # Information System Monitoring (Keyboard)
-  - SI-7    # Software, Firmware, and Information Integrity (SIP)
+  - AC-2
+  - AC-3
 moderate:
   - AC-2
   - AC-3
-  - AC-11
-  - AC-17
-  - AC-18
-  - CM-5
-  - SC-7
-  - SC-28
-  - SI-2
-  - SI-4
-  - SI-7
-  - IA-5    # Authenticator Management (not yet implemented)
-high:
-  - AC-2
-  - AC-3
-  - AC-11
-  - AC-17
-  - AC-18
-  - CM-5
-  - SC-7
-  - SC-28
-  - SI-2
-  - SI-4
-  - SI-7
   - IA-5
-  - SC-13   # Cryptographic Protection (not yet implemented)

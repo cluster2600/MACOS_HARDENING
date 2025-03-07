@@ -1,1 +1,28 @@
-pyyaml>=6.0.1
+# Albator - macOS 15 Hardening Tool Requirements
+# This file lists the dependencies required to run the Albator scripts.
+# Install these tools using Homebrew (brew) on macOS. Run 'brew install <tool>' for each.
+
+curl
+    # Purpose: Fetch data from GitHub Security Advisories API and Apple security updates page.
+    # Installation: brew install curl
+    # Note: Typically pre-installed on macOS, but verify with 'curl --version'.
+
+jq
+    # Purpose: Parse JSON responses from the GitHub Security Advisories API.
+    # Installation: brew install jq
+    # Note: Required for cve_fetch.sh. Install if 'jq --version' fails.
+
+pup
+    # Purpose: Parse HTML content from Apple security updates page.
+    # Installation: brew install pup
+    # Note: Optional but recommended for apple_updates.sh. Falls back to grep/awk if not installed.
+
+# Optional: For enhanced GitHub API access
+# github-cli (gh)
+#    # Purpose: Alternative to curl for authenticated GitHub API requests (optional).
+#    # Installation: brew install gh
+#    # Note: Requires a GitHub Personal Access Token for rate limit increases.
+
+# System Requirements
+# - macOS 15 (Sequoia)
+# - Administrator privileges (sudo access) for hardening scripts
