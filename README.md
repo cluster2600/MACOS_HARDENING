@@ -1,7 +1,7 @@
 ```md
 # Albator - macOS 15 Hardening Tool  
 
-![Albator](https://github.com/cluster2600/ALBATOR/blob/main/albator.png)
+![Albator](https://raw.githubusercontent.com/cluster2600/ALBATOR/main/albator.png)
 
 A series of scripts to harden macOS 15 (Sequoia) for security and privacy, inspired by NIST guidelines. Suitable for power users and novices alike. This project evolved from the macOS Security Compliance Project, a Python-based tool, with the current focus on Bash scripts while preserving legacy features.  
 
