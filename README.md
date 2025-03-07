@@ -1,4 +1,3 @@
-```md
 # Albator - macOS 15 Hardening Tool  
 
 ![Albator](albator.png)
@@ -10,7 +9,6 @@ Run the main script with options to harden specific areas or fetch security advi
 
 ```bash
 ./albator.sh [options]
-```
 
 ### Options  
 - `-f, --firewall`: Enable and configure the firewall  
