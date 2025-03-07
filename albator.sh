@@ -1,39 +1,151 @@
 #!/bin/bash
 
-# Help function to display usage
-function show_help() {
-    echo "Usage: ./albator.sh [options]"
-    echo "Options:"
-    echo "  -f, --firewall      Enable and configure the firewall"
-    echo "  -p, --privacy       Adjust privacy settings"
-    echo "  -e, --encryption    Enable FileVault encryption"
-    echo "  -s, --app-security   Enable Gatekeeper and verify Hardened Runtime"
-    echo "  -c, --cve          Fetch recent CVE advisories"
-    echo "  -a, --apple         Fetch Apple security updates"
-    echo "  -h, --help          Display this help message"
+# Display the new ASCII art for Albator
+echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@+.             +@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@                   .@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%     -@@-   .%@@      @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  . +@@@@@@  @@@@@@     @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@.  -@@@@@@@@  @@@@@@@@.  +@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ .@@@@@@@@@   +@@@@@@@@.  @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@. +@@@@@@@@*    @@@@@@@@@: @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  #@@@@@@@%      %@@@@@@@. :@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@   :@@@@@-  -@@-   @@@@@   =@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@          @@@@@@         .@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%                      .@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  @@@@   -      +   @@@@  +@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  @@@@   *  :   @  .@@@@  .@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@    @@@@@%%  +=  @#@@@@@.      @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@       +@@@@@@@@@@@@@@@@@   .   .@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@. #@%   .@@@@@@@@@@@@:    @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@  ..@@@@@@@%.  .%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@     @@    .@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@      .@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@         :@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@      @@@@ .   +@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@+   . @@@@@@@@@% .  .@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@        =@@@@@@@@@@@@@@-        @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@    @@@@@@@@@@@@@@@@@@+   .-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@   @@@@@@@@@@@@@@@@@@%   @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@+@@@@@@@@@@@@@@@@@@@@  :@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+
+echo " █████╗ ██╗     ██████╗  █████╗ ████████╗ ██████╗ ██████╗ "
+echo "██╔══██╗██║     ██╔══██╗██╔══██╗╚══██╔══╝██╔═══██╗██╔══██╗"
+echo "███████║██║     ██████╔╝███████║   ██║   ██║   ██║██████╔╝"
+echo "██╔══██║██║     ██╔══██╗██╔══██║   ██║   ██║   ██║██╔══██╗"
+echo "██║  ██║███████╗██████╔╝██║  ██║   ██║   ╚██████╔╝██║  ██║"
+echo "╚═╝  ╚═╝╚══════╝╚═════╝ ╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝"
+
+echo "Albator - macOS 15 Hardening Tool"
+echo "--------------------------------"
+
+# Function to check macOS version
+check_macos_version() {
+    if [[ $(sw_vers -productVersion) != "15"* ]]; then
+        echo "Error: This tool is designed for macOS 15 (Sequoia)."
+        exit 1
+    fi
 }
 
-# Parse command-line options
-while [[ "$#" -gt 0 ]]; do
+# Function to display usage
+usage() {
+    echo "Usage: $0 [options]"
+    echo "Options:"
+    echo "  -f, --firewall      Enable and configure firewall"
+    echo "  -p, --privacy      Adjust privacy settings"
+    echo "  -e, --encryption   Enable encryption (FileVault)"
+    echo "  -s, --app-security Enable Gatekeeper and verify Hardened Runtime"
+    echo "  -c, --cve          Fetch recent CVE advisories relevant to macOS"
+    echo "  -a, --apple        Fetch Apple security updates for macOS Sequoia 15"
+    echo "  -h, --help         Display this help message"
+    exit 1
+}
+
+# Check macOS version
+check_macos_version
+
+# Default flags
+FIREWALL=false
+PRIVACY=false
+ENCRYPTION=false
+APP_SECURITY=false
+CVE=false
+APPLE=false
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
     case $1 in
-        -f|--firewall) ./firewall.sh ;;
-        -p|--privacy) ./privacy.sh ;;
-        -e|--encryption) ./encryption.sh ;;
-        -s|--app-security) ./app_security.sh ;;
-        -c|--cve) ./cve_fetch.sh ;;
-        -a|--apple) ./apple_updates.sh ;;
-        -g|--generate) 
-        python3 generate_guidance.py "${@:2}" ;;  # Pass all remaining arguments to the Python script
-        -l|--list_tags) python3 generate_guidance.py -l ;;  # Example for listing tags
-        -k|--keyword) python3 generate_guidance.py -k "${@:2}" ;;  # Example for keyword
-    -p|--privacy) ./privacy.sh ;;
-    -a|--apple) ./apple_updates.sh ;;
-    -c|--cve) ./cve_fetch.sh ;;
-    -e|--encryption) ./encryption.sh ;;
-    -s|--app-security) ./app_security.sh ;;
-        *) echo "Unknown option: $1"; show_help; exit 1 ;;
+        -f|--firewall)
+            FIREWALL=true
+            shift
+            ;;
+        -p|--privacy)
+            PRIVACY=true
+            shift
+            ;;
+        -e|--encryption)
+            ENCRYPTION=true
+            shift
+            ;;
+        -s|--app-security)
+            APP_SECURITY=true
+            shift
+            ;;
+        -c|--cve)
+            CVE=true
+            shift
+            ;;
+        -a|--apple)
+            APPLE=true
+            shift
+            ;;
+        -h|--help)
+            usage
+            ;;
+        *)
+            echo "Unknown option: $1"
+            usage
+            ;;
     esac
-    shift
 done
 
-echo "No options provided. Use -h or --help for usage information."
+# If no options are provided, show usage
+if [ "$FIREWALL" = false ] && [ "$PRIVACY" = false ] && [ "$ENCRYPTION" = false ] && [ "$APP_SECURITY" = false ] && [ "$CVE" = false ] && [ "$APPLE" = false ]; then
+    usage
+fi
+
+# Run selected scripts
+if [ "$FIREWALL" = true ]; then
+    echo "Configuring firewall..."
+    bash ./firewall.sh
+fi
+
+if [ "$PRIVACY" = true ]; then
+    echo "Adjusting privacy settings..."
+    bash ./privacy.sh
+fi
+
+if [ "$ENCRYPTION" = true ]; then
+    echo "Enabling encryption..."
+    bash ./encryption.sh
+fi
+
+if [ "$APP_SECURITY" = true ]; then
+    echo "Configuring app security (Gatekeeper, Hardened Runtime)..."
+    bash ./app_security.sh
+fi
+
+if [ "$CVE" = true ]; then
+    echo "Fetching CVE advisories..."
+    bash ./cve_fetch.sh
+fi
+
+if [ "$APPLE" = true ]; then
+    echo "Fetching Apple security updates..."
+    bash ./apple_updates.sh
+fi
+
+echo "Operation complete!"
