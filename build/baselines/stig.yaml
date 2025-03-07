@@ -1,16 +1,34 @@
-title: "macOS 15.4: Security Configuration -macOS STIG Baseline Revision 1.1 for Sequoia STIG (Tailored from STIG)"
+title: "macOS 15 (Sequoia): Security Configuration - macOS STIG Baseline"
 description: |
-  This guide describes the actions to take when securing a macOS 15.4 system against themacOS STIG Baseline Revision 1.1 for Sequoia STIG (Tailored from STIG) security baseline.
+  This guide describes the actions to take when securing a macOS 15 (Sequoia) system against the macOS STIG Baseline security baseline.
 authors: |
-  *Security configuration tailored by:*
-  |===
-  |maxime|cyberdyne
-  |===
   *macOS Security Compliance Project*
-  Developed by the National Institute of Standards and Technology
+  STIG Compliance Team
   |===
-  |NIST macOS Security Team
+  |Security Team
   |===
 
 parent_values: "stig"
 profile:
+  - section: "guest"
+    rules:
+      - guest_account_disable
+  - section: "os"
+    rules:
+      - os_auto_login_disable
+      - os_bluetooth_disable
+      - os_filevault_enable
+      - os_firewall_enable
+      - os_gatekeeper_enable
+      - os_guest_account_disable
+      - os_keyboard_secure
+      - os_lockdown_enable
+      - os_remote_management_disable
+      - os_require_password_wake
+      - os_root_disable
+      - os_screensaver_password
+      - os_sip_enable
+      - os_siri_disable
+      - os_software_update_auto
+      - os_ssh_disable
+      - os_wifi_disable

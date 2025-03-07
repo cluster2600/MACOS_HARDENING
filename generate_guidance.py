@@ -8,7 +8,7 @@ from utils import parse_authors, append_authors, available_tags
 class BaselineGenerator:
     def __init__(self):
         self.args = create_args()
-        self.root_dir = '/Users/maximegrenu/Documents/CODE/Mac_sec/'
+        self.root_dir = '/Users/maxime/macoshardening/MACOS_HARDENING/'  # Update to the correct path
         self.includes_dir = os.path.join(self.root_dir, 'includes')
         self.build_dir = os.path.join(self.root_dir, 'build', 'baselines')
         self.original_wd = os.getcwd()

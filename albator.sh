@@ -22,7 +22,10 @@ while [[ "$#" -gt 0 ]]; do
         -s|--app-security) ./app_security.sh ;;
         -c|--cve) ./cve_fetch.sh ;;
         -a|--apple) ./apple_updates.sh ;;
-        -g|--generate) python3 generate_guidance.py ;;
+        -g|--generate) 
+        python3 generate_guidance.py "${@:2}" ;;  # Pass all remaining arguments to the Python script
+        -l|--list_tags) python3 generate_guidance.py -l ;;  # Example for listing tags
+        -k|--keyword) python3 generate_guidance.py -k "${@:2}" ;;  # Example for keyword
     -p|--privacy) ./privacy.sh ;;
     -a|--apple) ./apple_updates.sh ;;
     -c|--cve) ./cve_fetch.sh ;;
