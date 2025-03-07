@@ -1,6 +1,5 @@
-<<<<<<< HEAD
-      .e$$$$e.
-    e$$$$$$$$$$e
+  .e$$$$e.
+e$$$$$$$$$$e
    $$$$$$$$$$$$$$
   d$$$$$$$$$$$$$$b
   $$$$$$$$$$$$$$$$
@@ -13,15 +12,15 @@
    4$$$$$"^$$$$$%
     $$$$F  4$$$$
      "$$$ee$$$"
-     . *$$$$F4
+     . $$$$F4
       $     .$
       "$$$$$$"
        ^$$$$
-  4$$c       ""       .$$r
+ 4$$c       ""       .$$r
   ^$$$b              e$$$"
   d$$$$$e          z$$$$$b
- 4$$$$$$$$c    .$$$$$$r
-  ""    ^*$be$$$*"    ^"
+ 4$$$$$$$$c    .$$$$$$$$r
+  ""    ^$$$be$$$*"    ^"
            "$$$$"
          .d$$P$$$b
         d$$P   ^$$$b
@@ -32,7 +31,7 @@
      ""              ^"
 
 # Albator - macOS 15 Hardening Tool  
-A series of scripts to harden macOS 15 (Sequoia) for security and privacy, inspired by NIST guidelines. Suitable for power users and novices alike.  
+A series of scripts to harden macOS 15 (Sequoia) for security and privacy, inspired by NIST guidelines. Suitable for power users and novices alike. This project evolved from the macOS Security Compliance Project, a Python-based tool, with the current focus on Bash scripts while preserving legacy features.  
 
 ## Usage  
 Run the main script with options to harden specific areas or fetch security advisories:  
@@ -62,6 +61,8 @@ To fetch CVE advisories, Apple security updates, and enable the firewall:
 - Administrator privileges (sudo access)  
 - `curl` and `jq` for fetching CVE advisories (`brew install jq`)  
 - `pup` for parsing Apple security updates (`brew install pup`, optional but recommended)  
+- See `requirements.txt` for a detailed list of dependencies and installation instructions.  
+- **Legacy Python Requirements:** Python 3.9+ and `pyyaml` (if using the original Python implementation).  
 
 ## Features  
 - Modular scripts for targeted hardening (firewall, privacy, encryption, app security)  
@@ -70,168 +71,131 @@ To fetch CVE advisories, Apple security updates, and enable the firewall:
 - CVE advisory fetching to keep users informed about potential vulnerabilities  
 - Cross-referencing with Apple’s security updates for a comprehensive view of macOS vulnerabilities  
 
+### Legacy Features (Previous Python Implementation)  
+The project originated as a Python-based tool with the following capabilities:  
+- **Rule Collection:** Aggregated security rules from `rules/` and `custom/rules/` directories.  
+- **Baseline Generation:** Created YAML security baselines (e.g., STIG) based on keyword tags.  
+- **Control Verification:** Checked compliance against NIST 800-53 controls.  
+- **Tailoring:** Customized baselines with user-specific configurations and Organizational Defined Values (ODVs).  
+- **Fix Application:** Applied security fixes directly to the system, with prompts for confirmation (some require `sudo`).  
+
+### Interfaces  
+- **Command-Line:** Flags like `-l`, `-k`, `-c`, `-t`, `-i`, `--gui`.  
+- **Interactive Mode:** Run with `-i` for a command-line prompt.  
+- **GUI Mode:** Launch with `--gui` for a window with radio buttons.  
+
+### Supported Version  
+- **macOS 15.4 (Sequoia)**, with rules adapted from **NIST Revision 1.1 (December 16, 2024)**.  
+
+## Security Rules (Applicable to Both Versions)  
+- **Disable Guest Account** (`os_guest_account_disable`)  
+- **Enable System Integrity Protection** (`os_sip_enable`)  
+- **Enable Gatekeeper** (`os_gatekeeper_enable`)  
+- **Disable Bluetooth** (`os_bluetooth_disable`)  
+- **Disable Root Account** (`os_root_disable`)  
+- **Require Password for Screensaver** (`os_screensaver_password`)  
+- **Enable Firewall** (`os_firewall_enable`)  
+- **Enable Software Updates** (`os_software_update_auto`)  
+- **Disable SSH** (`os_ssh_disable`)  
+- **Disable Remote Management** (`os_remote_management_disable`)  
+- **Secure Keyboard Settings** (`os_keyboard_secure`)  
+- **Disable Wi-Fi** (`os_wifi_disable`)  
+- **Enable FileVault** (`os_filevault_enable`)  
+- **Enable Lockdown Mode** (`os_lockdown_enable`)  
+
 ## Notes and Limitations  
 - Some changes (e.g., FileVault) may require a system restart.  
 - Always back up your system before applying hardening scripts.  
 - CVE and Apple updates fetching require an internet connection.  
-- Disabling mDNS multicast may require temporarily disabling System Integrity Protection (SIP) on some systems. To do this, reboot into Recovery Mode, run `csrutil disable`, apply the changes, then re-enable SIP with `csrutil enable`.  
+- Disabling mDNS multicast may require temporarily disabling **System Integrity Protection (SIP)** on some systems. To do this, reboot into **Recovery Mode**, run `csrutil disable`, apply the changes, then re-enable SIP with `csrutil enable`.  
 - The Apple security updates script provides links to detailed pages where CVEs and vulnerability details are listed. Future enhancements could include scraping these details directly.  
 
-## Contributing  
-Feel free to submit issues or pull requests to improve Albator!  
-=======
-# macOS Security Compliance Project
+## Installation (Legacy Python Setup)  
 
-This project is a Python-based tool designed to enhance the security and privacy of macOS systems, specifically targeting macOS 15.4 (Sequoia) as of February 28, 2025. It automates the generation, customization, and application of security baselines aligned with standards such as **NIST SP 800-53** and **DISA STIG**, drawing inspiration from the [NIST macOS Security Guidelines](https://github.com/usnistgov/macos_security) and the [macOS Security and Privacy Guide](#macos-security-and-privacy-guide).
+### Set Up Directory  
+```bash
+mkdir -p ~/macoshardening/MACOS_HARDENING
+cd ~/macoshardening/MACOS_HARDENING
+```
 
-The tool supports multiple interfaces—**command-line, interactive mode, and a graphical user interface (GUI)**—making it accessible to both power users and novices aiming to harden their macOS systems.
+### Create Subdirectories  
+```bash
+mkdir -p rules custom/rules includes build/baselines
+```
 
-## Features
-- **Rule Collection**: Aggregates security rules from `rules/` and `custom/rules/` directories.
-- **Baseline Generation**: Creates YAML security baselines (e.g., STIG) based on keyword tags.
-- **Control Verification**: Checks compliance against **NIST 800-53** controls.
-- **Tailoring**: Customizes baselines with user-specific configurations and Organizational Defined Values (ODVs).
-- **Fix Application**: Applies security fixes directly to the system, with prompts for confirmation (some require `sudo`).
-- **Interfaces**:
-  - **Command-Line**: Use flags like `-l`, `-k`, `-c`, `-t`, `-i`, `--gui`.
-  - **Interactive Mode**: Run with `-i` for a command-line prompt experience.
-  - **GUI Mode**: Launch with `--gui` for a window with radio buttons to select actions.
+### Install Python Dependencies  
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install pyyaml
+```
 
-## Supported macOS Version
-- **macOS 15.4 (Sequoia)**, with rules adapted from **NIST Revision 1.1** guidance for macOS 15.0 (December 16, 2024) and customized for 15.4.
+### Verify Files  
+Ensure `main.py`, `arg_parser.py`, `rule_handler.py`, `utils.py`, `VERSION.yaml`, `includes/800-53_baselines.yaml`, `includes/mscp-data.yaml`, and `rules/*.yaml` exist.  
 
-## Prerequisites
-- **Python 3.9+**: Pre-installed on macOS 15.4 or available via Homebrew:
-  ```bash
-  brew install python
-  ```
-- **Dependencies**:
-  ```bash
-  pip install pyyaml
-  ```
-- **Tkinter**: Included with Python for GUI mode; ensure Xcode is installed for full compatibility:
-  ```bash
-  xcode-select --install
-  ```
-- **Sudo Access**: Required for applying system-level security fixes.
+## Usage (Legacy Python Commands)  
 
-## Installation
-1. **Set Up Directory**:
-   ```bash
-   mkdir -p ~/macoshardening/MACOS_HARDENING
-   cd ~/macoshardening/MACOS_HARDENING
-   ```
-2. **Create necessary subdirectories**:
-   ```bash
-   mkdir -p rules custom/rules includes build/baselines
-   ```
-3. **Install Python Dependencies**:
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate
-   pip install pyyaml
-   ```
-4. **Verify Files**:
-   Ensure the following files exist:
-   ```
-   main.py, arg_parser.py, rule_handler.py, utils.py, VERSION.yaml, 
-   includes/800-53_baselines.yaml, includes/mscp-data.yaml, rules/*.yaml
-   ```
+### Command-Line Mode  
+**List Tags:**  
+```bash
+python main.py -l
+```
 
-## Usage
-### Command-Line Mode
-- **List Tags**:
-  ```bash
-  python main.py -l
-  ```
-- **Generate Baseline**:
-  ```bash
-  python main.py -k stig
-  ```
-- **Check Controls**:
-  ```bash
-  python main.py -c
-  ```
-- **Tailor Baseline**:
-  ```bash
-  python main.py -k stig -t
-  ```
+**Generate Baseline:**  
+```bash
+python main.py -k stig
+```
 
-### Interactive Mode
-- Start:
-  ```bash
-  sudo python main.py -i
-  ```
-- Commands:
-  - `list`: Display all tags (e.g., `stig`, `security`).
-  - `generate <tag>`: Create a baseline (e.g., `generate stig`).
-  - `check`: Verify NIST 800-53 control coverage.
-  - `tailor <tag>`: Customize a baseline (e.g., `tailor stig`).
-  - `apply <tag>`: Apply fixes for rules with the tag (e.g., `apply stig`).
-  - `exit`: Quit interactive mode.
+**Check Controls:**  
+```bash
+python main.py -c
+```
 
-### GUI Mode
-- Start:
-  ```bash
-  sudo python main.py --gui
-  ```
-- Interface:
-  - **Radio buttons** for: List Tags, Generate Baseline, Check Controls, Tailor Baseline, Apply Fixes.
-  - Click **"Proceed"** to execute the selected action, follow prompts as needed.
+**Tailor Baseline:**  
+```bash
+python main.py -k stig -t
+```
 
-**Note**: Use `sudo` for commands applying fixes (e.g., `apply`) that modify system settings.
+### Interactive Mode  
+**Start:**  
+```bash
+sudo python main.py -i
+```
 
-## Project Structure
+**Commands:** `list`, `generate <tag>`, `check`, `tailor <tag>`, `apply <tag>`, `exit`.  
+
+### GUI Mode  
+**Start:**  
+```bash
+sudo python main.py --gui
+```
+
+**Interface:** Radio buttons for actions, click "Proceed" to execute.  
+
+## Project Structure (Legacy)  
 ```
 macoshardening/
 ├── MACOS_HARDENING/
-│   ├── main.py            # Core script with CLI, interactive, and GUI modes
-│   ├── arg_parser.py      # Command-line argument parsing
-│   ├── rule_handler.py    # Rule collection, control checking, baseline generation
-│   ├── utils.py           # Utility functions
-│   ├── includes/          # Configuration files
-│   │   ├── 800-53_baselines.yaml  # NIST 800-53 control baselines
-│   │   └── mscp-data.yaml         # Metadata for authors and titles
-│   ├── VERSION.yaml       # macOS version info
-│   ├── build/             # Generated outputs
-│   │   └── baselines/     # Baseline YAML files (e.g., stig.yaml)
-│   └── venv/              # Virtual environment (optional)
-├── rules/                 # Security rule YAML files
-├── custom/                # Optional custom rule overrides
-└── README.md              # This documentation
+│   ├── main.py            # Core script
+│   ├── arg_parser.py      # Argument parsing
+│   ├── rule_handler.py    # Rule handling
+│   ├── utils.py           # Utilities
+│   ├── includes/          # Configuration
+│   ├── VERSION.yaml       # Version info
+│   ├── build/             # Baselines
+│   └── venv/              # Virtual env
+├── rules/                 # Rule YAMLs
+├── custom/                # Custom rules
+└── README.md              # This file
 ```
 
-## Security Rules
-The tool applies the following security measures:
-- **Disable Guest Account** (`os_guest_account_disable`)
-- **Enable System Integrity Protection** (`os_sip_enable`)
-- **Enable Gatekeeper** (`os_gatekeeper_enable`)
-- **Disable Bluetooth** (`os_bluetooth_disable`)
-- **Disable Root Account** (`os_root_disable`)
-- **Require Password for Screensaver** (`os_screensaver_password`)
-- **Enable Firewall** (`os_firewall_enable`)
-- **Enable Software Updates** (`os_software_update_auto`)
-- **Disable SSH** (`os_ssh_disable`)
-- **Disable Remote Management** (`os_remote_management_disable`)
-- **Secure Keyboard Settings** (`os_keyboard_secure`)
-- **Disable Wi-Fi** (`os_wifi_disable`)
-- **Enable FileVault** (`os_filevault_enable`)
-- **Enable Lockdown Mode** (`os_lockdown_enable`)
+## Contributing  
+Feel free to submit issues or pull requests to improve Albator, including enhancements to the Bash scripts or revival of Python features!  
 
-## Known Limitations
-- **Manual Fixes**: Some rules (e.g., FileVault, Lockdown Mode) require manual steps due to GUI dependencies.
-- **Sudo Requirement**: Many fixes need root privileges; run with `sudo` for full functionality.
-- **macOS 15.4 Specificity**: Rules are based on Sequoia 15.0 guidance; verify compatibility with 15.4 updates.
+## License  
+Open-source under the MIT License.  
 
-## Contributing
-- Add new rules to `rules/` or improve scripts.
-- Submit feedback or enhancements via issues or pull requests if hosted on a repository.
-
-## License
-Open-source under the MIT License.
-
-## Acknowledgments
-- Built on **NIST macOS Security Guidelines** (Revision 1.1, 2024).
-- Inspired by the [macOS Security and Privacy Guide](#macos-security-and-privacy-guide).
-- Developed by **Maxime at Cyberdyne Systems**.
->>>>>>> df968e5e42207fb86b6e675b231f5ec5b2568aa3
+## Acknowledgments  
+- Built on **NIST macOS Security Guidelines (Revision 1.1, 2024)**.  
+- Inspired by the **macOS Security and Privacy Guide**.  
+- Developed by **Maxime at Cyberdyne Systems**.  
