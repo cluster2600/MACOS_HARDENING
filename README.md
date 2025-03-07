@@ -1,34 +1,11 @@
-  .e$$$$e.
-e$$$$$$$$$$e
-   $$$$$$$$$$$$$$
-  d$$$$$$$$$$$$$$b
-  $$$$$$$$$$$$$$$$
- 4$$$$$$$$$$$$$$$$F
- 4$$$$$$$$$$$$$$$$F
-  $$$" "$$$$" "$$$
-  $$F   4$$F   4$$
-  '$F   4$$F   4$"
-   $$   $$$$   $P
-   4$$$$$"^$$$$$%
-    $$$$F  4$$$$
-     "$$$ee$$$"
-     . $$$$F4
-      $     .$
-      "$$$$$$"
-       ^$$$$
- 4$$c       ""       .$$r
-  ^$$$b              e$$$"
-  d$$$$$e          z$$$$$b
- 4$$$$$$$$c    .$$$$$$$$r
-  ""    ^$$$be$$$*"    ^"
-           "$$$$"
-         .d$$P$$$b
-        d$$P   ^$$$b
-    .ed$$$"      "$$$be.
-  $$$$P          *$$$$
- 4$$$$$P            $$$$"
-  "*$"            ^$$P
-     ""              ^"
+ █████╗ ██╗     ██████╗  █████╗ ████████╗ ██████╗ ██████╗ 
+██╔══██╗██║     ██╔══██╗██╔══██╗╚══██╔══╝██╔═══██╗██╔══██╗
+███████║██║     ██████╔╝███████║   ██║   ██║   ██║██████╔╝
+██╔══██║██║     ██╔══██╗██╔══██║   ██║   ██║   ██║██╔══██╗
+██║  ██║███████╗██████╔╝██║  ██║   ██║   ╚██████╔╝██║  ██║
+╚═╝  ╚═╝╚══════╝╚═════╝ ╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝
+                                                          
+
 
 # Albator - macOS 15 Hardening Tool  
 A series of scripts to harden macOS 15 (Sequoia) for security and privacy, inspired by NIST guidelines. Suitable for power users and novices alike. This project evolved from the macOS Security Compliance Project, a Python-based tool, with the current focus on Bash scripts while preserving legacy features.  
